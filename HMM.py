@@ -35,7 +35,29 @@ class HMM:
         """reads HMM structure from transition (basename.trans),
         and emission (basename.emit) files,
         as well as the probabilities."""
+        trans = open(basename + '.trans', 'r')
+        line = trans.readline()
+        while line:
+            words = line.split()
+            if not words[0] in self.transitions:
+                self.transitions[words[0]] = {}
 
+            self.transitions[words[0]][words[1]] = float(words[2])
+            line = trans.readline()
+
+        trans.close()
+
+        emit = open(basename + '.emit', 'r')
+        line = emit.readline()
+        while line:
+            words = line.split()
+            if not words[0] in self.emissions:
+                self.emissions[words[0]] = {}
+
+            self.emissions[words[0]][words[1]] = float(words[2])
+            line = emit.readline()
+
+        emit.close()
 
 
    ## you do this.
@@ -53,7 +75,10 @@ class HMM:
         the output sequence, using the Viterbi algorithm.
         """
 
+if __name__ == "__main__":
+    model = HMM()
+    model.load('two_english')
 
-
+    print(model.transitions)
 
 
