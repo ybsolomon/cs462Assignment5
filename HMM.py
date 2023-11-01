@@ -5,6 +5,7 @@ import argparse
 import codecs
 import os
 import numpy
+import random
 
 # observations
 class Observation:
@@ -63,8 +64,28 @@ class HMM:
    ## you do this.
     def generate(self, n):
         """return an n-length observation by randomly sampling from this HMM."""
+        states = ['#']
+        emissions = ['#']
+        current = '#'
 
+        for i in range(n):
+            random_state = random.choices(population=list(self.transitions[current].keys()),
+                                          weights=list(self.transitions[current].values()))[0]
 
+            emission = random.choices(population=list(self.emissions[random_state].keys()),
+                                          weights=list(self.emissions[random_state].values()))[0]
+            states.append(random_state)
+            emissions.append(emission)
+
+            current = random_state
+
+        return states, emissions
+
+    def forward(self, observation):
+        """given an observation,
+        find and return the state sequence that generated
+        the output sequence, using the forward algorithm.
+        """
 
     ## you do this: Implement the Viterbi alborithm. Given an Observation (a list of outputs or emissions)
     ## determine the most likely sequence of states.
@@ -80,5 +101,8 @@ if __name__ == "__main__":
     model.load('two_english')
 
     print(model.transitions)
+
+    print(model.generate(6))
+
 
 
