@@ -7,25 +7,12 @@ import os
 import numpy
 import random
 
+
 # hmm model
-def getObservations(filename):
-    observations = []
-    file = open(filename, 'r')
-    line = file.readline()
-
-    while line:
-        if len(line) > 1:
-            observations.append(['#'] + line.split())
-
-        line = file.readline()
-
-    return observations
-
-
 class HMM:
     def __init__(self, transitions={}, emissions={}):
         """creates a model from transition and emission probabilities"""
-        ## Both of these are dictionaries of dictionaries. e.g. :
+        # Both of these are dictionaries of dictionaries. e.g. :
         # {'#': {'C': 0.814506898514, 'V': 0.185493101486},
         #  'C': {'C': 0.625840873591, 'V': 0.374159126409},
         #  'V': {'C': 0.603126993184, 'V': 0.396873006816}}
@@ -33,7 +20,7 @@ class HMM:
         self.transitions = transitions
         self.emissions = emissions
 
-    ## part 1 - you do this.
+    # part 1 - you do this.
     def load(self, basename):
         """reads HMM structure from transition (basename.trans),
         and emission (basename.emit) files,
@@ -64,10 +51,6 @@ class HMM:
 
         emit.close()
 
-        print(self.transitions.keys())
-
-
-   ## you do this.
     def generate(self, n):
         """return an n-length observation by randomly sampling from this HMM."""
         states = ['#']
@@ -136,14 +119,74 @@ class HMM:
 
         return max_state
 
-
-    ## you do this: Implement the Viterbi algorithm. Given an Observation (a list of outputs or emissions)
-    ## determine the most likely sequence of states.
+    # you do this: Implement the Viterbi algorithm. Given an Observation (a list of outputs or emissions)
+    # determine the most likely sequence of states.
     def viterbi(self, observation):
-        """given an observation,
-        find and return the state sequence that generated
-        the output sequence, using the Viterbi algorithm.
-        """
+        rows, cols = (len(self.transitions), len(observation))
+        matrix = [[0.0 for i in range(cols)] for j in range(rows)]
+        back_pointers = [[0 for i in range(cols)] for j in range(rows)]
+
+        matrix[0][0] = 1.0
+
+        state_num = 0
+        for state in self.transitions.keys():
+            trans = self.transitions[observation[0]]
+
+            if observation[1] not in self.emissions[state]:
+                emission = 0
+            else:
+                emission = self.emissions[state][observation[1]]
+
+            matrix[state_num][1] = trans[state] * emission
+
+            state_num += 1
+
+        for i in range(2, len(observation)):
+            state_num = 0
+            for state in self.transitions.keys():
+                s2_num = 0
+                max_val = -1
+                max_idx = 0
+                for s2 in self.transitions.keys():
+                    if observation[i] not in self.emissions[state]:
+                        emission_prob = 0
+                    else:
+                        emission_prob = self.emissions[state][observation[i]]
+
+                    transition_prob = self.transitions[s2][state]
+
+                    curr_val = matrix[s2_num][i - 1] * transition_prob * emission_prob
+                    if curr_val > max_val:
+                        max_val = curr_val
+                        max_idx = s2_num
+
+                    s2_num += 1
+
+                matrix[state_num][i] = max_val
+                back_pointers[state_num][i] = int(max_idx)
+
+                state_num += 1
+
+        final_vals = [row[-1] for row in matrix]
+        states = list(self.transitions.keys())
+        max_val, max_state, max_idx = final_vals[0], states[0], 0
+        for i in range(1, len(final_vals)):
+            if max_val < final_vals[i]:
+                max_val = final_vals[i]
+                max_idx = i
+
+        state_order = []
+        current_idx = max_idx
+
+        for i in reversed(range(1, len(observation))):
+            next_point = back_pointers[current_idx][i]
+
+            state_order.append(states[current_idx])
+            current_idx = next_point
+
+        state_order.reverse()
+
+        return state_order
 
     def printMatrix(self, matrix):
         keys = list(self.transitions.keys())
@@ -151,18 +194,17 @@ class HMM:
             print(keys[i], matrix[i])
 
 
-if __name__ == "__main__":
-    model = HMM()
-    model.load('partofspeech.browntags.trained')
-
-    observ = ['#', 'i', 'shot', 'the', 'elephant', '.']
-    observations = getObservations('ambiguous_sents.obs')
-
-    print(observations)
-    for observation in observations:
-        print('final state:', model.forward(observation))
-
-    # print('final state:', model.forward(observation))
+# if __name__ == "__main__":
+#     model = HMM()
+#     model.load('partofspeech.browntags.trained')
+#
+#     observ = ['#', 'i', 'shot', 'the', 'elephant', '.']
+#     observations = getObservations('ambiguous_sents.obs')
+#     for observation in observations:
+#         print(model.viterbi(observation))
+#         print(observation)
+#         print('predicted final state:', model.forward(observation))
+#         print()
 
 
 
