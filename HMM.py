@@ -8,23 +8,26 @@ import numpy
 import random
 
 
-# hmm model
+def getObservations(filename):
+    observations = []
+    file = open(filename, 'r')
+    line = file.readline()
+
+    while line:
+        if len(line) > 1:
+            observations.append(['#'] + line.split())
+
+        line = file.readline()
+
+    return observations
+
+
 class HMM:
     def __init__(self, transitions={}, emissions={}):
-        """creates a model from transition and emission probabilities"""
-        # Both of these are dictionaries of dictionaries. e.g. :
-        # {'#': {'C': 0.814506898514, 'V': 0.185493101486},
-        #  'C': {'C': 0.625840873591, 'V': 0.374159126409},
-        #  'V': {'C': 0.603126993184, 'V': 0.396873006816}}
-
         self.transitions = transitions
         self.emissions = emissions
 
-    # part 1 - you do this.
     def load(self, basename):
-        """reads HMM structure from transition (basename.trans),
-        and emission (basename.emit) files,
-        as well as the probabilities."""
         trans = open(basename + '.trans', 'r')
         line = trans.readline()
         while line:
@@ -52,7 +55,6 @@ class HMM:
         emit.close()
 
     def generate(self, n):
-        """return an n-length observation by randomly sampling from this HMM."""
         states = ['#']
         emissions = ['#']
         current = '#'
@@ -68,7 +70,7 @@ class HMM:
 
             current = random_state
 
-        return emissions
+        return states, emissions
 
     def forward(self, observation):
         rows, cols = (len(self.transitions), len(observation))
@@ -194,17 +196,32 @@ class HMM:
             print(keys[i], matrix[i])
 
 
-# if __name__ == "__main__":
-#     model = HMM()
-#     model.load('partofspeech.browntags.trained')
-#
-#     observ = ['#', 'i', 'shot', 'the', 'elephant', '.']
-#     observations = getObservations('ambiguous_sents.obs')
-#     for observation in observations:
-#         print(model.viterbi(observation))
-#         print(observation)
-#         print('predicted final state:', model.forward(observation))
-#         print()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Get word frequencies from a file.")
+    parser.add_argument('file', type=str)
 
+    parser.add_argument('--generate', type=int)
+    parser.add_argument('--forward', type=str)
+    parser.add_argument('--viterbi', type=str)
 
+    args = parser.parse_args()
 
+    model = HMM()
+    model.load(args.file)
+
+    if args.generate:
+        generated = model.generate(args.generate)
+        print(generated[0])
+        print(generated[1])
+
+    if args.forward:
+        observations = getObservations(args.forward)
+        for observation in observations:
+            print(observation)
+            print('predicted', model.forward(observation))
+
+    if args.viterbi:
+        observations = getObservations(args.viterbi)
+        for observation in observations:
+            print(observation)
+            print('predicted', model.viterbi(observation))

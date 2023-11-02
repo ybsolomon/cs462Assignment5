@@ -1,19 +1,4 @@
-from HMM import HMM
-
-
-def getObservations(filename):
-    observations = []
-    file = open(filename, 'r')
-    line = file.readline()
-
-    while line:
-        if len(line) > 1:
-            observations.append(['#'] + line.split())
-
-        line = file.readline()
-
-    return observations
-
+from HMM import HMM, getObservations
 
 if __name__ == "__main__":
     model = HMM()
